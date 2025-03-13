@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mood Based Playlist Generator</title>
+  </head>
+  <body>
+    <h1>Mood Based Playlist Generator</h1>
+    <form method="POST" action="/analyze">
+      <label for="language">Select Language:</label>
+      <select name="language" id="language">
+        <option value="English">English</option>
+        <option value="Kannada">Kannada</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Punjabi">Punjabi</option>
+      </select>
+      <br><br>
+      <!-- Webcam Video -->
+      <video id="video" width="640" height="480" autoplay></video>
+      <br>
+      <button type="button" id="snap">Capture Photo</button>
+      <br><br>
+      <!-- Hidden canvas and input for the captured image -->
+      <!-- Using a smaller canvas to reduce resolution -->
+      <canvas id="canvas" width="240" height="180" style="display:none;"></canvas>
+      <input type="hidden" name="image" id="image">
+      <br>
+      <input type="submit" value="Generate Playlist">
+    </form>
+    <script>
+      var video = document.getElementById('video');
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function(stream) {
+              video.srcObject = stream;
+              video.play();
+          });
+      }
+
+      var snap = document.getElementById("snap");
+      var canvas = document.getElementById('canvas');
+      var context = canvas.getContext('2d');
+      snap.addEventListener("click", function() {
+          // Draw video frame scaled down to the canvas size (240x180)
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          // Use JPEG with 30% quality to reduce file size
+          var dataURL = canvas.toDataURL('image/jpeg', 0.3);
+          // Log the size of the data URL (you can check the console)
+          console.log("Data URL length:", dataURL.length);
+          document.getElementById('image').value = dataURL;
+          alert("Photo captured! (Check console for data URL size)");
+      });
+    </script>
+  </body>
+</html>

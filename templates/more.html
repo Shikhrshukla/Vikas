@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <title>More Songs</title>
+  </head>
+  <body>
+    <h1>More Songs for mood: {{ emotion }} in {{ language }}</h1>
+    <ul>
+      {% for song in songs %}
+        <li>
+          <a href="{{ song.url }}" target="_blank">{{ song.name }} by {{ song.artist }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+    <!-- Load More button -->
+    <form action="{{ url_for('more') }}" method="get">
+      <input type="hidden" name="emotion" value="{{ emotion }}">
+      <input type="hidden" name="language" value="{{ language }}">
+      <input type="hidden" name="offset" value="{{ next_offset }}">
+      <button type="submit">Load More</button>
+    </form>
+    <br>
+    <a href="/">Back to Home</a>
+  </body>
+</html>
