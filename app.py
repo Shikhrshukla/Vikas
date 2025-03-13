@@ -6,9 +6,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # --- Spotify API Setup ---
-SPOTIPY_CLIENT_ID = "ef15eca1539946939ee76e14b6b852b0"
-SPOTIPY_CLIENT_SECRET = "e6479d6f44d54381b33ff28c714f9b58"
-
+SPOTIPY_CLIENT_ID = "your_spotify_client_id"
+SPOTIPY_CLIENT_SECRET = "your_spotify_client_secret"
 
 def init_spotify():
     """Initialize Spotify API with error handling."""
@@ -19,7 +18,6 @@ def init_spotify():
     except Exception as e:
         st.error(f"Error connecting to Spotify: {e}")
         return None
-
 
 spotify = init_spotify()
 
@@ -39,8 +37,7 @@ LANGUAGE_MARKET_MAP = {
     "Punjabi": "IN"
 }
 
-
-# --- Emotion Detection ---
+@st.cache_data
 def detect_emotion(image):
     """Detects emotion from an image using the FER library."""
     try:
@@ -48,24 +45,19 @@ def detect_emotion(image):
         emotions = detector.detect_emotions(image)
         if not emotions:
             return "neutral"
-        top_emotion = max(emotions[0]["emotions"], key=emotions[0]["emotions"].get)
-        return top_emotion
+        return max(emotions[0]["emotions"], key=emotions[0]["emotions"].get)
     except Exception as e:
         st.error(f"Error detecting emotion: {e}")
         return "neutral"
 
-
-# --- Song Recommendation ---
+@st.cache_data
 def get_songs(emotion, language, offset=0):
     """Fetch songs based on mood and language using Spotify API."""
     if not spotify:
         return []
-
     genres = EMOTION_GENRE_MAP.get(emotion, ["chill"])
     market = LANGUAGE_MARKET_MAP.get(language, "US")
-
-    query = f"genre:{genres[0]}"  # Use first genre from emotion mapping
-
+    query = f"genre:{genres[0]}"
     try:
         results = spotify.search(q=query, type="track", limit=10, offset=offset, market=market)
         return [(track["name"], track["artists"][0]["name"], track["external_urls"]["spotify"])
@@ -74,38 +66,30 @@ def get_songs(emotion, language, offset=0):
         st.error(f"Error fetching songs: {e}")
         return []
 
-
 # --- Streamlit UI ---
 st.title("🎭 Mood-Based Song Recommender 🎶")
 st.sidebar.write("**Upload an image or capture from webcam**")
 
-# --- Image Input ---
 img_file = st.file_uploader("📂 Upload an image", type=["png", "jpg", "jpeg"])
 camera_image = st.camera_input("📷 Capture from Webcam")
-
-image = None  # Initialize image variable
+image = None
 
 if img_file or camera_image:
     img_source = img_file if img_file else camera_image
     file_bytes = np.frombuffer(img_source.read(), np.uint8)
     image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-    if image is None:
-        st.error("Failed to load image! Try again.")
-    else:
+    if image is not None:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, (300, 300))  # Resize for better detection
+        image = cv2.resize(image, (300, 300))
         st.image(image, caption="Uploaded/Captured Image", width=300)
+    else:
+        st.error("Failed to load image! Try again.")
 
-# --- Process Image & Recommend Songs ---
 if image is not None:
     detected_emotion = detect_emotion(image)
     st.subheader(f"🎭 **Detected Mood:** {detected_emotion.capitalize()}")
-
-    # --- Language Selection ---
+    
     language = st.selectbox("🌐 Choose your language", ["English", "Kannada", "Hindi", "Punjabi"])
-
-    # --- Song Suggestions ---
     songs = get_songs(detected_emotion, language)
     if songs:
         st.write("🎵 **Recommended Songs:**")
@@ -113,8 +97,7 @@ if image is not None:
             st.markdown(f"- [{name} by {artist}]({url})")
     else:
         st.warning("No songs found! Try again.")
-
-    # --- More Songs Button ---
+    
     if st.button("🔄 More Songs"):
         more_songs = get_songs(detected_emotion, language, offset=10)
         if more_songs:
@@ -123,6 +106,5 @@ if image is not None:
         else:
             st.warning("No more songs found!")
 
-# --- Footer ---
 st.markdown("---")
 st.markdown("📌 **Tip:** Ensure your face is well-lit for better mood detection!")
